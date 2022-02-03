@@ -60,7 +60,7 @@ import com.siperian.sif.message.mrm.SearchMatchResponse;
 @Service
 public class SearchService {
 
-	/*Git Directory sixth commit*/
+	/*Git Directory seventh commit*/
 	String persName = null;
 	@Value("User")
 	private String pass;
