@@ -1,0 +1,13 @@
+com\api\Service\SearchService.class
+com\api\model\Address.class
+com\api\model\Party.class
+com\api\Controller\SearchController.class
+com\api\config\SecurityConfiguration.class
+com\api\Controller\ExceptionHandler.class
+com\api\DB\CreateSIFClient.class
+com\api\model\PlainPojo.class
+com\api\Controller\ExceptionClass.class
+com\api\Mainclass.class
+com\api\model\Model.class
+com\api\ServletInitializer.class
+com\api\SearchSpringApplication.class
