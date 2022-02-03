@@ -1,5 +1,0 @@
-com\getapi\com\GetApiStartApplication.class
-com\getapi\com\model\UserModel.class
-com\getapi\com\controller\GetApiController.class
-com\getapi\com\service\GetApiService.class
-com\getapi\com\repository\FetchDataService.class
