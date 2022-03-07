@@ -1,20 +1,23 @@
 package com.title.service;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.FileHandler;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 import java.util.stream.Collectors;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +32,7 @@ import com.title.model.TitleFinalModalList;
 import com.title.model.TitleModel;
 import com.title.model.TitlePriorityModal;
 import com.title.tcrhub.repository.TcrhubRepository;
+import org.apache.commons.collections4.ListUtils;
 
 @Service
 public class TitleService {
@@ -41,6 +45,26 @@ public class TitleService {
 
 	@Autowired
 	private TcrhubRepository userRepository;
+	
+//	private final Logger logger = Logger.getLogger(TitleService.class.getName());
+//	private FileHandler fh = null;
+//
+//	
+//	public TitleService() { // just to make our log file nicer :)
+//		try {
+//			SimpleDateFormat format = new SimpleDateFormat("M-d_HHmmss");
+//			String home = System.getProperty("user.home");
+//
+//			String name = "D:\\API LOG FILES\\TitleService_";
+//			fh = new FileHandler(name + format.format(Calendar.getInstance().getTime()) + ".log");
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+//
+//		fh.setFormatter(new SimpleFormatter());
+//		logger.addHandler(fh);
+//
+//	}
 
 	public List<TitleFinalModalList> getRequest() throws HttpException, IOException, ResourceNotFoundException {
 
@@ -77,14 +101,16 @@ public class TitleService {
 			String newJsonData = gson.toJson(tutorials.get(i));
 			System.out.println("newJsonData------>" + newJsonData);
 			Base64 b = new Base64();
-			String encoding = b.encodeAsString(new String("Puser01:Mdmuser01").getBytes());
+			String encoding = b.encodeAsString(new String("Puser01:PortalMdm01").getBytes());
 			result = newJsonData;
 			/*For DAPP*/
 			//String postURL = "http://dapp01mdm01:8080/cmx/task/operations/dsql01mdm01-tcr_hub";
 			/*FOR QAPP*/
 			//String postURL = "http://qapp01mdm01:8080/cmx/task/operations/qsql01mdm01-cmx_ors";
+			//username:Puser01 password:Mdmuser01
+			//prod username:Puser01 password:PortalMdm01
 			
-			String postURL = "http://dapp01mdm01:8080/cmx/task/operations/dsql01mdm01-tcr_hub";
+			String postURL = "http://papp01mdm01:8080/cmx/task/operations/psql01mdm01-tcr_hub";
 			PostMethod postMethod = null;
 			postMethod = new PostMethod(postURL);
 			postMethod.setRequestHeader("Authorization", "Basic " + encoding);
@@ -130,6 +156,8 @@ public class TitleService {
 
 		java.util.List<TitlePriorityModal> numdatelist = new ArrayList<TitlePriorityModal>();
 		List<Map<String, String>> rowidPrioritylist = userRepository.getrowidtasks();
+		System.out.println("rowidPrioritylist list size is "+rowidPrioritylist.size());
+		
 		List<Integer> rowidList = new ArrayList<Integer>();
 		List<String> priorityList = new ArrayList<String>();
 		List<Map<String,String>> pmodal=new ArrayList<>();
@@ -145,18 +173,28 @@ public class TitleService {
 			/* pmodal.add(priorityModal); */
 			}
 		}
+		System.out.println("RowId tasks with priority list is "+pmodal);
+		System.out.println("RowId tasks with priority list is "+pmodal);
 		List<TitleModel> tutorials = new ArrayList<TitleModel>();
-
+		
 		try {
-			
+			int chunkSize = 2000;
+			List<List<Integer>> partitionedList = ListUtils.partition(rowidList, chunkSize);
+			System.out.println("partitionedList-->"+partitionedList);
 			if (rowidList.size() != 0) {
 				for (int i = 0; i < rowidList.size(); i++) {
 					
 				}
+				
 				TitlePriorityModal tutorial = new TitlePriorityModal();
 				if (rowidList.size() != 0) {
-					List<Map<String, String>> list = bookRepository.getrowidtasks(rowidList);
-
+					System.out.println("partitionedList------->"+partitionedList.size());
+					List<Map<String, String>> list =new ArrayList<>();
+					for(List<Integer> multipleparts:partitionedList) {
+					list.addAll(bookRepository.getrowidtasks(multipleparts));
+					System.out.println("multipleparts------->"+multipleparts.size());
+					}
+					
 					numdatelist = list.stream().map(m -> {
 
 						TitlePriorityModal numdate = new TitlePriorityModal();
@@ -166,14 +204,17 @@ public class TitleService {
 						for (int k = 0; k < pmodal.size(); k++) {
 							
 							if (numdate.getPaprocessid().equals(pmodal.get(k).get("Rowid")))
-								
+								//logger.info(pmodal.get(k).get("Rowid")+"  setting  "+pmodal.get(k).get("priority"));
+								//System.out.println(pmodal.get(k).get("Rowid")+"  setting  "+pmodal.get(k).get("priority"));
 								numdate.setPriority(pmodal.get(k).get("priority"));
 
 						}
 						numdate.setTaskId(String.valueOf(m.get("taskId")));
 						return numdate;
 					}).collect(Collectors.toList());
+					
 				}
+				
 			}
 			int i = 0;
 			
@@ -218,7 +259,7 @@ public class TitleService {
 //			titleModel.setError("There are no task_id's in cmx_ors server");
 //			tutorials.add(titleModel);
 //			return tutorials;
-
+			System.out.println("Exception is "+e);
 			throw new ResourceNotFoundException("There are no task_id's in cmx_ors server");
 
 		}
